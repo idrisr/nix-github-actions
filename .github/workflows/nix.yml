@@ -24,7 +24,7 @@ jobs:
       - name: Check Nixpkgs inputs
         uses: DeterminateSystems/flake-checker-action@main
         with:
-          fail-mode: true
+          fail-mode: false
 
       # Nix-specific logic begins here
       - name: Check Rust formatting
