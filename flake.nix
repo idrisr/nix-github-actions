@@ -1,8 +1,6 @@
 {
-  description = "Nix + GitHub Actions";
-
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/24.05";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
@@ -10,12 +8,7 @@
     };
   };
 
-  outputs =
-    { self
-    , nixpkgs
-    , flake-utils
-    , rust-overlay
-    }:
+  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
     # Non-system-specific logic
     let
       # Borrow project metadata from the Rust config
@@ -28,13 +21,12 @@
         # Build Rust toolchain using helpers from rust-overlay
         (self: super: {
           # This supplies cargo, rustc, rustfmt, etc.
-          rustToolchain = super.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+          rustToolchain =
+            super.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
         })
       ];
-    in
-    # System-specific logic
-    flake-utils.lib.eachDefaultSystem
-      (system:
+      # System-specific logic
+    in flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit overlays system; };
 
@@ -59,26 +51,24 @@
           echo "Building TODOs service..."
           nix build .#todos
         '';
-      in
-      {
+      in {
         devShells = {
           # Unified shell environment
-          default = pkgs.mkShell
-            {
-              buildInputs = [ runCiLocally ] ++ (with pkgs; [
-                # Rust stuff (CI + dev)
-                rustToolchain
-                cargo-deny
+          default = pkgs.mkShell {
+            buildInputs = [ runCiLocally ] ++ (with pkgs; [
+              # Rust stuff (CI + dev)
+              rustToolchain
+              cargo-deny
 
-                # Rust stuff (dev only)
-                cargo-edit
-                cargo-watch
+              # Rust stuff (dev only)
+              cargo-edit
+              cargo-watch
 
-                # Spelling and linting
-                codespell
-                eclint
-              ]);
-            };
+              # Spelling and linting
+              codespell
+              eclint
+            ]);
+          };
         };
 
         packages = rec {
@@ -92,19 +82,16 @@
             release = true;
           };
 
-          docker =
-            let
-              bin = "${self.packages.${system}.todos}/bin/${name}";
-            in
-            pkgs.dockerTools.buildLayeredImage {
-              inherit name;
-              tag = "v${version}";
+          docker = let bin = "${self.packages.${system}.todos}/bin/${name}";
+          in pkgs.dockerTools.buildLayeredImage {
+            inherit name;
+            tag = "v${version}";
 
-              config = {
-                Entrypoint = [ bin ];
-                ExposedPorts."8080/tcp" = { };
-              };
+            config = {
+              Entrypoint = [ bin ];
+              ExposedPorts."8080/tcp" = { };
             };
+          };
         };
       });
 }
