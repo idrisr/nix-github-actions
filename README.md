@@ -1,5 +1,6 @@
 # Nix + GitHub Actions
 meaningless
+meaningless
 
 > **Note**: this repo is discussed in [Streamline your GitHub Actions
 > dependencies using Nix][post] on the [Determinate Systems blog][blog].
